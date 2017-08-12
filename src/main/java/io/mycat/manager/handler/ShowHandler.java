@@ -27,6 +27,7 @@ import io.mycat.config.ErrorCode;
 import io.mycat.manager.ManagerConnection;
 import io.mycat.manager.response.ShowBackend;
 import io.mycat.manager.response.ShowBackendOld;
+import io.mycat.manager.response.ShowBufferPool;
 import io.mycat.manager.response.ShowCollation;
 import io.mycat.manager.response.ShowCommand;
 import io.mycat.manager.response.ShowConnection;
@@ -247,6 +248,9 @@ public final class ShowHandler {
 		case ManagerParseShow.DIRECTMEMORY_TOTAL:
 			ShowDirectMemory.execute(c,1);
 			break;
+		case ManagerParseShow.BUFFERPOOL:
+		    ShowBufferPool.execute(c);
+		    break;
 		default:
 			c.writeErrMessage(ErrorCode.ER_YES, "Unsupported statement");
 		}

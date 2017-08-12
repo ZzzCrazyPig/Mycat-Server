@@ -27,6 +27,7 @@ import com.google.common.io.Files;
 import io.mycat.backend.BackendConnection;
 import io.mycat.backend.datasource.PhysicalDBPool;
 import io.mycat.buffer.BufferPool;
+import io.mycat.buffer.ByteBufferArena;
 import io.mycat.buffer.DirectByteBufferPool;
 import io.mycat.cache.CacheService;
 import io.mycat.config.MycatConfig;
@@ -318,8 +319,11 @@ public class MycatServer {
 				 * bufferPoolChunkSize对应每个bytebufferchunk的每个page的长度
 				 * bufferPoolPageNumber对应每个bytebufferlist有多少个bytebufferchunk
 				 */
-
-				totalNetWorkBufferSize = 6*bufferPoolPageSize * bufferPoolPageNumber;
+			    int chunkSize = bufferPoolPageSize / 6;
+			    short pageSize = bufferPoolChunkSize;
+			    int chunkCount = bufferPoolPageNumber;
+				bufferPool = new ByteBufferArena(chunkSize, pageSize, chunkCount, system.getFrontSocketSoRcvbuf());
+				totalNetWorkBufferSize = 6 * chunkSize * chunkCount;
 				break;
 			default:
 				bufferPool = new DirectByteBufferPool(bufferPoolPageSize,bufferPoolChunkSize,
@@ -832,7 +836,7 @@ public class MycatServer {
 			}
 		};
 	}
-
+	
 	public boolean isAIO() {
 		return aio;
 	}

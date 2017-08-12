@@ -110,7 +110,7 @@ public class ShowDirectMemory {
 
         int useOffHeapForMerge = MycatServer.getInstance().getConfig().getSystem().getUseOffHeapForMerge();
 
-        ConcurrentHashMap<Long,Long> networkbufferpool = MycatServer.getInstance().
+        ConcurrentHashMap<Object,Long> networkbufferpool = MycatServer.getInstance().
                 getBufferPool().getNetDirectMemoryUsage();
 
         try {
@@ -136,7 +136,7 @@ public class ShowDirectMemory {
                 }
             }
 
-            for (Long key:networkbufferpool.keySet()) {
+            for (Object key:networkbufferpool.keySet()) {
                 RowDataPacket row = new RowDataPacket(DETAILl_FIELD_COUNT);
                 Long value = networkbufferpool.get(key);
                 row.add(String.valueOf(key).getBytes(c.getCharset()));
@@ -185,7 +185,7 @@ public class ShowDirectMemory {
         int useOffHeapForMerge = MycatServer.getInstance().getConfig().
                 getSystem().getUseOffHeapForMerge();
 
-        ConcurrentHashMap<Long,Long> networkbufferpool = MycatServer.getInstance().
+        ConcurrentHashMap<Object,Long> networkbufferpool = MycatServer.getInstance().
                 getBufferPool().getNetDirectMemoryUsage();
 
         RowDataPacket row = new RowDataPacket(TOTAL_FIELD_COUNT);
@@ -215,7 +215,7 @@ public class ShowDirectMemory {
             /**
              * 网络packet处理，在buffer pool 已经使用DirectMemory内存
              */
-            for (Map.Entry<Long, Long> entry : networkbufferpool.entrySet()) {
+            for (Map.Entry<Object, Long> entry : networkbufferpool.entrySet()) {
                 usedforNetworkd += entry.getValue();
             }
 

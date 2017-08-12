@@ -80,6 +80,7 @@ public final class ManagerParseShow {
 	public static final int WHITE_HOST_SET = 44;
     public static final int DIRECTMEMORY_TOTAL = 45;
     public static final int DIRECTMEMORY_DETAILl = 46;
+    public static final int BUFFERPOOL = 47;
 
 
     public static int parse(String stmt, int offset) {
@@ -200,6 +201,20 @@ public final class ManagerParseShow {
 
     // SHOW @@BACKEND
     static int show2BCheck(String stmt, int offset) {
+        
+        switch (stmt.charAt(offset + 1)) {
+            case 'A':
+            case 'a':
+                return show2BackendCheck(stmt, offset);
+            case 'U':
+            case 'u':
+                return show2BufferPoolCheck(stmt, offset);
+            default:
+                return OTHER;
+        }
+    }
+    
+    static int show2BackendCheck(String stmt, int offset) {
         if (stmt.length() > offset + "ACKEND".length()) {
             char c1 = stmt.charAt(++offset);
             char c2 = stmt.charAt(++offset);
@@ -223,6 +238,33 @@ public final class ManagerParseShow {
                 }
                 return BACKEND;
                 
+            }
+        }
+        return OTHER;
+    }
+    
+    static int show2BufferPoolCheck(String stmt, int offset) {
+        if (stmt.length() > offset + "UFFERPOOL".length()) {
+            char c1 = stmt.charAt(++offset); // U
+            char c2 = stmt.charAt(++offset); // F
+            char c3 = stmt.charAt(++offset); // F
+            char c4 = stmt.charAt(++offset); // E
+            char c5 = stmt.charAt(++offset); // R
+            char c6 = stmt.charAt(++offset); // P
+            char c7 = stmt.charAt(++offset); // O
+            char c8 = stmt.charAt(++offset); // O
+            char c9 = stmt.charAt(++offset); // L
+            if ((c1 == 'U' || c1 == 'u')
+                    && (c2 == 'F' || c2 == 'f')
+                    && (c3 == 'F' || c3 == 'f')
+                    && (c4 == 'E' || c4 == 'e')
+                    && (c5 == 'R' || c5 == 'r')
+                    && (c6 == 'P' || c6 == 'p')
+                    && (c7 == 'O' || c7 == 'o')
+                    && (c8 == 'O' || c8 == 'o')
+                    && (c9 == 'L' || c9 == 'l')
+                    && (stmt.length() == ++offset)) {
+                return BUFFERPOOL;
             }
         }
         return OTHER;

@@ -3,10 +3,12 @@ package io.mycat.buffer;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.mycat.MycatServer;
 import sun.nio.ch.DirectBuffer;
 
 /**
@@ -28,7 +30,12 @@ public class DirectByteBufferPool implements BufferPool{
     /**
      * 记录对线程ID->该线程的所使用Direct Buffer的size
      */
-    private final ConcurrentHashMap<Long,Long> memoryUsage;
+    private final ConcurrentHashMap<Object,Long> memoryUsage;
+    
+    private AtomicLong allocCnt = new AtomicLong(0L);
+    private AtomicLong allocSuccessCnt = new AtomicLong(0L);
+    private AtomicLong recycleCnt = new AtomicLong(0L);
+    private AtomicLong recycleSuccessCnt = new AtomicLong(0L);
 
     public DirectByteBufferPool(int pageSize, short chunkSize, short pageCount,int conReadBuferChunk) {
         allPages = new ByteBufferPage[pageCount];
@@ -67,26 +74,32 @@ public class DirectByteBufferPool implements BufferPool{
     }
 
     public ByteBuffer allocate(int size) {
+    	allocCnt.incrementAndGet();
        final int theChunkCount = size / chunkSize + (size % chunkSize == 0 ? 0 : 1);
         int selectedPage =  prevAllocatedPage.incrementAndGet() % allPages.length;
         ByteBuffer byteBuf = allocateBuffer(theChunkCount, 0, selectedPage);
         if (byteBuf == null) {
             byteBuf = allocateBuffer(theChunkCount, selectedPage, allPages.length);
         }
-        final long threadId = Thread.currentThread().getId();
+        final String threadName = Thread.currentThread().getName();
 
         if(byteBuf !=null){
-            if (memoryUsage.containsKey(threadId)){
-                memoryUsage.put(threadId,memoryUsage.get(threadId)+byteBuf.capacity());
+        	allocSuccessCnt.incrementAndGet();
+            if (memoryUsage.containsKey(threadName)){
+                memoryUsage.put(threadName,memoryUsage.get(threadName)+byteBuf.capacity());
             }else {
-                memoryUsage.put(threadId,(long)byteBuf.capacity());
+                memoryUsage.put(threadName,(long)byteBuf.capacity());
             }
+        } else {
+        	LOGGER.warn("can not allocate bytebuffer from pool");
         }
         return byteBuf;
     }
 
     public void recycle(ByteBuffer theBuf) {
+    	recycleCnt.incrementAndGet();
     	if(!(theBuf instanceof DirectBuffer)){
+    		LOGGER.warn("can not recycle non direct bytebuffer");
     		theBuf.clear();
     		return;
     	}
@@ -103,13 +116,15 @@ public class DirectByteBufferPool implements BufferPool{
                 break;
             }
         }
-        final long threadId = Thread.currentThread().getId();
+        final String threadName = Thread.currentThread().getName();
 
-        if (memoryUsage.containsKey(threadId)){
-            memoryUsage.put(threadId,memoryUsage.get(threadId)-size);
+        if (memoryUsage.containsKey(threadName)){
+            memoryUsage.put(threadName,memoryUsage.get(threadName)-size);
         }
         if (recycled == false) {
             LOGGER.warn("warning ,not recycled buffer " + theBuf);
+        } else {
+        	recycleSuccessCnt.incrementAndGet();
         }
     }
 
@@ -129,7 +144,7 @@ public class DirectByteBufferPool implements BufferPool{
     }
 	
 	 @Override
-    public ConcurrentHashMap<Long,Long> getNetDirectMemoryUsage() {
+    public ConcurrentHashMap<Object,Long> getNetDirectMemoryUsage() {
         return memoryUsage;
     }
 
@@ -158,6 +173,27 @@ public class DirectByteBufferPool implements BufferPool{
 
     public int getConReadBuferChunk() {
         return conReadBuferChunk;
+    }
+    
+    public ByteBufferPage[] getByteBufferPage() {
+    	return allPages;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        final String LINE_SEP = System.getProperty("line.separator");
+        sb.append("DirectByteBufferPool status : {" + LINE_SEP)
+                .append(" allocCnt = " + this.allocCnt.get())
+                .append(", allocSuccessCnt = " + this.allocSuccessCnt.get())
+                .append(", recycleCnt = " + this.recycleCnt.get())
+                .append(", recycleSuccessCnt = " + this.recycleSuccessCnt.get()).append(LINE_SEP);
+        for (int i = 0; i < allPages.length; i++) {
+            ByteBufferPage onePage = allPages[i];
+            sb.append("page " + i + " : " + onePage.toString() + LINE_SEP);
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
 }

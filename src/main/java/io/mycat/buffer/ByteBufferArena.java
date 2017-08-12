@@ -37,7 +37,7 @@ public class ByteBufferArena implements BufferPool {
     /**
      * 记录对线程ID->该线程的所使用Direct Buffer的size
      */
-    private final ConcurrentHashMap<Long,Long> memoryUsage;
+    private final ConcurrentHashMap<Object,Long> memoryUsage;
     private final int conReadBuferChunk;
 
     public ByteBufferArena(int chunkSize, int pageSize, int chunkCount, int conReadBuferChunk) {
@@ -103,12 +103,12 @@ public class ByteBufferArena implements BufferPool {
 //            printList();
             capacity.addAndGet(-reqCapacity);
             final Thread thread =  Thread.currentThread();
-            final long threadId = thread.getId();
+            final String threadName = thread.getName();
 
-            if (memoryUsage.containsKey(threadId)){
-                memoryUsage.put(threadId,memoryUsage.get(thread.getId())+reqCapacity);
+            if (memoryUsage.containsKey(threadName)){
+                memoryUsage.put(threadName,memoryUsage.get(threadName)+reqCapacity);
             }else {
-                memoryUsage.put(threadId, (long) reqCapacity);
+                memoryUsage.put(threadName, (long) reqCapacity);
             }
             if (sharedOptsCount.contains(thread)) {
                 int currentCount = sharedOptsCount.get(thread);
@@ -144,10 +144,10 @@ public class ByteBufferArena implements BufferPool {
                 return;
             }
             final Thread thread =  Thread.currentThread();
-            final long threadId = thread.getId();
+            final String threadName = thread.getName();
 
-            if (memoryUsage.containsKey(threadId)){
-                memoryUsage.put(threadId,memoryUsage.get(thread.getId())-size);
+            if (memoryUsage.containsKey(threadName)){
+                memoryUsage.put(threadName,memoryUsage.get(threadName)-size);
             }
             if (sharedOptsCount.contains(thread)) {
                 int currentCount = sharedOptsCount.get(thread);
@@ -203,7 +203,7 @@ public class ByteBufferArena implements BufferPool {
     }
 
     @Override
-    public ConcurrentHashMap<Long, Long> getNetDirectMemoryUsage() {
+    public ConcurrentHashMap<Object, Long> getNetDirectMemoryUsage() {
         return memoryUsage;
     }
 

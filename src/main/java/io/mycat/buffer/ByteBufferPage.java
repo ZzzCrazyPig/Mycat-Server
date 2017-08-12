@@ -99,4 +99,15 @@ public class ByteBufferPage {
         }
         return false;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[ ").append("capacity = " + this.buf.capacity())
+                .append(", chunkSize = " + this.chunkSize)
+                .append(", chunkCount = " + this.chunkCount)
+                .append(", startAddress = " + this.startAddress)
+                .append(", usedChunks = " + this.chunkAllocateTrack.cardinality()).append(" ]");
+        return sb.toString();
+    }
 }

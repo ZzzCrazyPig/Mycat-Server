@@ -18,6 +18,6 @@ public interface BufferPool {
     public int getConReadBuferChunk();
     public  int getSharedOptsCount();
     public int getChunkSize();
-    public ConcurrentHashMap<Long,Long> getNetDirectMemoryUsage();
+    public ConcurrentHashMap<Object,Long> getNetDirectMemoryUsage();
     public BufferArray allocateArray();
 }
