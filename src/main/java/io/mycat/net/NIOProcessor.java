@@ -172,7 +172,7 @@ public final class NIOProcessor {
 
 			// 清理已关闭连接，否则空闲检查。
 			if (c.isClosed()) {
-				c.cleanup();
+				// c.cleanup();
 				it.remove();
 				this.frontendsLength.decrementAndGet();
 			} else {

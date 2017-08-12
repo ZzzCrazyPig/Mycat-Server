@@ -94,16 +94,22 @@ public class NIOSocketWR extends SocketWR {
 			}
 
 			buffer.flip();
-			while (buffer.hasRemaining()) {
-				written = channel.write(buffer);
-				if (written > 0) {
-					con.lastWriteTime = TimeUtil.currentTimeMillis();
-					con.netOutBytes += written;
-					con.processor.addNetOutBytes(written);
-					con.lastWriteTime = TimeUtil.currentTimeMillis();
-				} else {
-					break;
+			try {
+				while (buffer.hasRemaining()) {
+					written = channel.write(buffer);
+					if (written > 0) {
+						con.lastWriteTime = TimeUtil.currentTimeMillis();
+						con.netOutBytes += written;
+						con.processor.addNetOutBytes(written);
+						con.lastWriteTime = TimeUtil.currentTimeMillis();
+					} else {
+						break;
+					}
 				}
+			} catch (IOException e) {
+				// logger.error("err on write0 : " + e.getMessage());
+				con.recycle(buffer);
+				throw e;
 			}
 			if (buffer.hasRemaining()) {
 				con.writeBuffer = buffer;

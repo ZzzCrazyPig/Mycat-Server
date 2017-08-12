@@ -82,7 +82,7 @@ public abstract class AbstractConnection implements NIOConnection {
 	private long idleTimeout;
 
 	private final SocketWR socketWR;
-
+	
 	public AbstractConnection(NetworkChannel channel) {
 		this.channel = channel;
 		boolean isAIO = (channel instanceof AsynchronousChannel);
@@ -509,6 +509,9 @@ public abstract class AbstractConnection implements NIOConnection {
 			if (reason.contains("connection,reason:java.net.ConnectException")) {
 				throw new RuntimeException(" errr");
 			}
+		} else {
+		    // make sure buffer recycle again, avoid buffer leak
+			this.cleanup();
 		}
 	}
 
@@ -527,7 +530,6 @@ public abstract class AbstractConnection implements NIOConnection {
 	 * 清理资源
 	 */
 	protected void cleanup() {
-		
 		// 清理资源占用
 		if (readBuffer != null) {
 			this.recycle(readBuffer);
@@ -593,4 +595,5 @@ public abstract class AbstractConnection implements NIOConnection {
 	public void onConnectfinish() {
 		LOGGER.debug("连接后台真正完成");
 	}	
+	
 }
